@@ -70,10 +70,12 @@ final class Indexer
     {
         $diffX = -($this->spawnXZ[0] >> 9);
         $diffZ = -($this->spawnXZ[1] >> 9);
+        @mkdir($this->path . '/reindexed', 0777, true);
         foreach ($this->regions as $region) {
             $r = new Region($region[0], $region[1], $region[2]);
             $this->indexRegion($r, $diffX, $diffZ);
             $r->close();
+            copy($region[2], $this->path . '/reindexed/r' . ($region[0] + $diffX) . '.' . ($region[1] + $diffZ) . '.mcr');
         }
         $this->levelData->SpawnX = new IntTag("SpawnX", (int)(($diffX << 9) + $this->spawnXZ[0]));
         $this->levelData->SpawnZ = new IntTag("SpawnZ", (int)(($diffZ << 9) + $this->spawnXZ[1]));
@@ -90,7 +92,20 @@ final class Indexer
     }
 
 
+    //Objects are passed by "reference"
     private function indexRegion(Region $region, int $diffX = 0, int $diffZ = 0)
     {
+        for ($x = 0; $x < 32; $x++) {
+            for ($z = 0; $z < 32; $z++) {
+                if (($chunk = $region->readChunk($x, $z)) === null)
+                    continue;
+                if (($chunk->getX() - ($region->getX() << 5)) !== $x || ($chunk->getZ() - ($region->getZ() << 5)) !== $z)
+                    Console::error('§cWrong chunk index');
+                $chunk->setX(($diffX << 5) + $chunk->getX());
+                $chunk->setZ(($diffZ << 5) + $chunk->getZ());
+                if (($chunkData = $chunk->toBinary()) !== false)
+                    $region->writeChunk($chunkData, $x, $z);
+            }
+        }
     }
 }
