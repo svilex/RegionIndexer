@@ -70,12 +70,12 @@ final class Indexer
     {
         $diffX = -($this->spawnXZ[0] >> 9);
         $diffZ = -($this->spawnXZ[1] >> 9);
-        @mkdir($this->path . '/reindexed', 0777, true);
+        @mkdir($this->path . '/indexed_region', 0777, true);
         foreach ($this->regions as $region) {
             $r = new Region($region[0], $region[1], $region[2]);
             $this->indexRegion($r, $diffX, $diffZ);
             $r->close();
-            copy($region[2], $this->path . '/reindexed/r' . ($region[0] + $diffX) . '.' . ($region[1] + $diffZ) . '.mcr');
+            copy($region[2], $this->path . '/indexed_region/r.' . ($region[0] + $diffX) . '.' . ($region[1] + $diffZ) . '.mcr');
         }
         $this->levelData->SpawnX = new IntTag("SpawnX", (int)(($diffX << 9) + $this->spawnXZ[0]));
         $this->levelData->SpawnZ = new IntTag("SpawnZ", (int)(($diffZ << 9) + $this->spawnXZ[1]));
@@ -84,15 +84,14 @@ final class Indexer
             "Data" => $this->levelData
         ]));
         $buffer = $nbt->writeCompressed();
-        if (@file_put_contents($this->path . "/level.dat", $buffer))
+        if (@file_put_contents($this->path . "/indexed_level.dat", $buffer))
             Console::info('§aMoved §f§r' . $this->levelData['LevelName'] . ' §a\'s spawn to §b' . $this->levelData['SpawnX'] . '§f§r, §b' . $this->levelData['SpawnZ']);
         else
-            Console::error('§cCould\'t save the new spawn in the level.dat, you can try teleporting yourself at: §b' . $this->levelData['SpawnX'] . '§f§r, §b' . $this->levelData['SpawnZ']);
+            Console::error('§cCould\'t save the new spawn in the indexed_level.dat, you can try teleporting yourself at: §b' . $this->levelData['SpawnX'] . '§f§r, §b' . $this->levelData['SpawnZ']);
         unset($nbt, $this->levelData, $buffer);
     }
 
 
-    //Objects are passed by "reference"
     private function indexRegion(Region $region, int $diffX = 0, int $diffZ = 0)
     {
         for ($x = 0; $x < 32; $x++) {

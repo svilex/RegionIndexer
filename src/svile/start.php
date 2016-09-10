@@ -40,7 +40,7 @@ namespace svile {
     if (!(is_dir($path) && is_file($path . '/level.dat'))) {
         $path = realpath(PATH . $worldFolderPath);
         if (!(is_dir($path) && is_file($path . '/level.dat'))) {
-            Console::error('§cCouldn\'t find the world folder §a' . PATH . $worldFolderPath);
+            Console::error('§cCouldn\'t find the world folder at §a' . PATH . $worldFolderPath);
             exit(0);
         }
     }
@@ -60,7 +60,7 @@ namespace svile {
 
     new Indexer($path, $regions);
 
+    Console::log('§fPress §lEnter§f§r §fto exit');
+    Console::getInput();
     exit(0);
-
-// /home/giovanni/Desktop/PHP7/php7/bin/php /home/giovanni/Desktop/RegionIndexer/src/svile/start.php
 }
