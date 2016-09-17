@@ -70,6 +70,10 @@ final class Indexer
     {
         $diffX = -($this->spawnXZ[0] >> 9);
         $diffZ = -($this->spawnXZ[1] >> 9);
+        if (abs($diffX) < 1 || abs($diffZ) < 1) {// == 0
+            Console::error('§cWhat should i index? The spawn is already in region §f§rr.0.0.mcr');
+            exit(0);
+        }
         @mkdir($this->path . '/indexed_region', 0777, true);
         foreach ($this->regions as $region) {
             $r = new Region($region[0], $region[1], $region[2]);
