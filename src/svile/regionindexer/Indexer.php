@@ -76,19 +76,20 @@ final class Indexer
         }
         @mkdir($this->path . '/indexed_region', 0777, true);
         foreach ($this->regions as $region) {
-            $r = new Region($region[0], $region[1], $region[2]);
+            $new_path = $this->path . '/indexed_region/r.' . ($region[0] + $diffX) . '.' . ($region[1] + $diffZ) . '.mcr';
+            copy($region[2], $new_path);
+            $r = new Region($region[0], $region[1], $new_path);
             $this->indexRegion($r, $diffX, $diffZ);
             $r->close();
-            copy($region[2], $this->path . '/indexed_region/r.' . ($region[0] + $diffX) . '.' . ($region[1] + $diffZ) . '.mcr');
         }
-        $this->levelData->SpawnX = new IntTag("SpawnX", (int)(($diffX << 9) + $this->spawnXZ[0]));
-        $this->levelData->SpawnZ = new IntTag("SpawnZ", (int)(($diffZ << 9) + $this->spawnXZ[1]));
+        $this->levelData->SpawnX = new IntTag('SpawnX', (int)(($diffX << 9) + $this->spawnXZ[0]));
+        $this->levelData->SpawnZ = new IntTag('SpawnZ', (int)(($diffZ << 9) + $this->spawnXZ[1]));
         $nbt = new NBT(NBT::BIG_ENDIAN);
-        $nbt->setData(new CompoundTag("", [
-            "Data" => $this->levelData
+        $nbt->setData(new CompoundTag('', [
+            'Data' => $this->levelData
         ]));
         $buffer = $nbt->writeCompressed();
-        if (@file_put_contents($this->path . "/indexed_level.dat", $buffer))
+        if (@file_put_contents($this->path . '/indexed_level.dat', $buffer))
             Console::info('§aMoved §f§r' . $this->levelData['LevelName'] . ' §a\'s spawn to §b' . $this->levelData['SpawnX'] . '§f§r, §b' . $this->levelData['SpawnZ']);
         else
             Console::error('§cCould\'t save the new spawn in the indexed_level.dat, you can try teleporting yourself at: §b' . $this->levelData['SpawnX'] . '§f§r, §b' . $this->levelData['SpawnZ']);
@@ -104,8 +105,21 @@ final class Indexer
                     continue;
                 if (($chunk->getX() - ($region->getX() << 5)) !== $x || ($chunk->getZ() - ($region->getZ() << 5)) !== $z)
                     Console::error('§cWrong chunk index');
+
+                foreach ($chunk->getNbt()->TileEntities as &$nbt) {
+                    if ($nbt instanceof CompoundTag) {
+                        if (!isset($nbt->id, $nbt->x, $nbt->z))
+                            continue;
+                        if (($nbt['x'] >> 4) == $chunk->getX() && ($nbt['z'] >> 4) == $chunk->getZ()) {
+                            $nbt->x = new IntTag('x', (int)(($diffX << 9) + $nbt['x']));
+                            $nbt->z = new IntTag('z', (int)(($diffZ << 9) + $nbt['z']));
+                        }
+                    }
+                }
+
                 $chunk->setX(($diffX << 5) + $chunk->getX());
                 $chunk->setZ(($diffZ << 5) + $chunk->getZ());
+
                 if (($chunkData = $chunk->toBinary()) !== false)
                     $region->writeChunk($chunkData, $x, $z);
             }

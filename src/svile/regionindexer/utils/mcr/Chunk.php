@@ -19,8 +19,11 @@ namespace svile\regionindexer\utils\mcr;
 
 
 use svile\regionindexer\utils\nbt\NBT;
+
 use svile\regionindexer\utils\nbt\tag\CompoundTag;
 use svile\regionindexer\utils\nbt\tag\IntTag;
+use svile\regionindexer\utils\nbt\tag\ListTag;
+use svile\regionindexer\utils\nbt\tag\ByteArrayTag;
 
 
 final class Chunk
@@ -35,11 +38,29 @@ final class Chunk
 
         $this->nbt = $nbt;
 
+        if (!isset($this->nbt->Entities) || !($this->nbt->Entities instanceof ListTag))
+            $this->nbt->Entities = new ListTag('Entities', []);
+        $this->nbt->Entities->setTagType(NBT::TAG_Compound);
+
+        if (!isset($this->nbt->TileEntities) || !($this->nbt->TileEntities instanceof ListTag))
+            $this->nbt->TileEntities = new ListTag('TileEntities', []);
+        $this->nbt->TileEntities->setTagType(NBT::TAG_Compound);
+
+        if (!isset($this->nbt->TileTicks) || !($this->nbt->TileTicks instanceof ListTag))
+            $this->nbt->TileTicks = new ListTag('TileTicks', []);
+        $this->nbt->TileTicks->setTagType(NBT::TAG_Compound);
+
         if (!isset($this->nbt->xPos) || !($this->nbt->xPos instanceof IntTag))
             $this->nbt->xPos = new IntTag('xPos', 0);
 
         if (!isset($this->nbt->zPos) || !($this->nbt->zPos instanceof IntTag))
             $this->nbt->zPos = new IntTag('zPos', 0);
+
+        if (!isset($this->nbt->Blocks))
+            $this->nbt->Blocks = new ByteArrayTag('Blocks', str_repeat("\x00", 32768));
+
+        if (!isset($this->nbt->Data))
+            $this->nbt->Data = new ByteArrayTag('Data', str_repeat("\x00", 16384));
     }
 
 
@@ -98,5 +119,10 @@ final class Chunk
     public function setZ(int $z = 0)
     {
         $this->nbt->zPos = new IntTag('zPos', (int)$z);
+    }
+
+    public function getNbt()
+    {
+        return $this->nbt;
     }
 }
