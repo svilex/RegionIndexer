@@ -98,7 +98,7 @@ final class Chunk
     }
 
 
-    public function getX()
+    public function getX() : int
     {
         return (int)$this->nbt['xPos'];
     }
@@ -110,7 +110,7 @@ final class Chunk
     }
 
 
-    public function getZ()
+    public function getZ() : int
     {
         return (int)$this->nbt['zPos'];
     }
@@ -121,7 +121,7 @@ final class Chunk
         $this->nbt->zPos = new IntTag('zPos', (int)$z);
     }
 
-    public function getNbt()
+    public function getNbt() : CompoundTag
     {
         return $this->nbt;
     }

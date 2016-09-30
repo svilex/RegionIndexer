@@ -23,6 +23,8 @@ use svile\regionindexer\utils\mcr\Region;
 
 use svile\regionindexer\utils\nbt\NBT;
 use svile\regionindexer\utils\nbt\tag\CompoundTag;
+use svile\regionindexer\utils\nbt\tag\ListTag;
+use svile\regionindexer\utils\nbt\tag\DoubleTag;
 use svile\regionindexer\utils\nbt\tag\IntTag;
 use svile\regionindexer\utils\nbt\tag\StringTag;
 
@@ -77,10 +79,12 @@ final class Indexer
         @mkdir($this->path . '/indexed_region', 0777, true);
         foreach ($this->regions as $region) {
             $new_path = $this->path . '/indexed_region/r.' . ($region[0] + $diffX) . '.' . ($region[1] + $diffZ) . '.mcr';
-            copy($region[2], $new_path);
-            $r = new Region($region[0], $region[1], $new_path);
-            $this->indexRegion($r, $diffX, $diffZ);
-            $r->close();
+            if (copy($region[2], $new_path) && is_file($new_path)) {
+                usleep(1000);
+                $r = new Region($region[0], $region[1], $new_path);
+                $this->indexRegion($r, $diffX, $diffZ);
+                $r->close();
+            }
         }
         $this->levelData->SpawnX = new IntTag('SpawnX', (int)(($diffX << 9) + $this->spawnXZ[0]));
         $this->levelData->SpawnZ = new IntTag('SpawnZ', (int)(($diffZ << 9) + $this->spawnXZ[1]));
@@ -113,6 +117,20 @@ final class Indexer
                         if (($nbt['x'] >> 4) == $chunk->getX() && ($nbt['z'] >> 4) == $chunk->getZ()) {
                             $nbt->x = new IntTag('x', (int)(($diffX << 9) + $nbt['x']));
                             $nbt->z = new IntTag('z', (int)(($diffZ << 9) + $nbt['z']));
+                        }
+                    }
+                }
+
+                foreach ($chunk->getNbt()->Entities as &$nbt) {
+                    if ($nbt instanceof CompoundTag) {
+                        if (!isset($nbt->id, $nbt->x, $nbt->z))
+                            continue;
+                        if ((int)($nbt['Pos'][0] >> 4) == $chunk->getX() && (int)($nbt['Pos'][2] >> 4) == $chunk->getZ()) {
+                            $nbt->Pos = new ListTag("Pos", [
+                                new DoubleTag(0, ($diffX << 9) + $nbt['Pos'][0]),
+                                new DoubleTag(1, $nbt['Pos'][1]),
+                                new DoubleTag(2, ($diffX << 9) + $nbt['Pos'][2])
+                            ]);
                         }
                     }
                 }
